@@ -1,0 +1,290 @@
+import os
+from pathlib import Path
+from collections import Counter
+
+
+# ---------------------------------------------------------
+# Phishing Kit Structure Analyzer
+# ---------------------------------------------------------
+
+def analyze_phishing_kit(directory):
+    directory = Path(directory)
+
+    if not directory.exists():
+        print("Error: Directory does not exist.")
+        return
+
+    if not directory.is_dir():
+        print("Error: The given path is not a directory.")
+        return
+
+    # File categories
+    categories = {
+        "HTML": {".html", ".htm"},
+        "PHP": {".php"},
+        "JavaScript": {".js", ".mjs"},
+        "Image": {
+            ".jpg", ".jpeg", ".png", ".gif",
+            ".bmp", ".svg", ".webp", ".ico"
+        },
+        "CSS": {".css"},
+        "Configuration": {
+            ".json", ".xml", ".ini", ".conf",
+            ".config", ".env", ".yaml", ".yml"
+        }
+    }
+
+    file_counts = Counter()
+    all_files = []
+
+    # -----------------------------------------------------
+    # Scan directory recursively
+    # -----------------------------------------------------
+
+    for file_path in directory.rglob("*"):
+
+        if not file_path.is_file():
+            continue
+
+        all_files.append(file_path)
+
+        extension = file_path.suffix.lower()
+
+        category_found = False
+
+        for category, extensions in categories.items():
+
+            if extension in extensions:
+                file_counts[category] += 1
+                category_found = True
+                break
+
+        # Files that don't belong to known categories
+        if not category_found:
+            file_counts["Other"] += 1
+
+    total_files = len(all_files)
+
+    if total_files == 0:
+        print("No files found in the directory.")
+        return
+
+    # -----------------------------------------------------
+    # Display file structure
+    # -----------------------------------------------------
+
+    print("\n" + "=" * 70)
+    print("              PHISHING KIT STRUCTURE ANALYZER")
+    print("=" * 70)
+
+    print(f"\nDirectory analyzed : {directory}")
+    print(f"Total files        : {total_files}")
+
+    print("\nFILE TYPE ANALYSIS")
+    print("-" * 70)
+
+    print(
+        f"{'File Type':<20}"
+        f"{'Count':<10}"
+        f"{'Percentage':<12}"
+    )
+
+    print("-" * 70)
+
+    ordered_categories = [
+        "HTML",
+        "PHP",
+        "JavaScript",
+        "Image",
+        "CSS",
+        "Configuration",
+        "Other"
+    ]
+
+    for category in ordered_categories:
+
+        count = file_counts[category]
+
+        percentage = (count / total_files) * 100
+
+        print(
+            f"{category:<20}"
+            f"{count:<10}"
+            f"{percentage:>8.2f}%"
+        )
+
+    # -----------------------------------------------------
+    # Identify suspicious files
+    # -----------------------------------------------------
+
+    suspicious_files = []
+
+    suspicious_php_names = {
+        "login.php",
+        "verify.php",
+        "verification.php",
+        "validate.php",
+        "process.php",
+        "submit.php",
+        "auth.php",
+        "credential.php",
+        "update.php"
+    }
+
+    suspicious_keywords = [
+        "login",
+        "verify",
+        "verification",
+        "credential",
+        "password",
+        "passwd",
+        "auth",
+        "account",
+        "bank",
+        "secure"
+    ]
+
+    for file_path in all_files:
+
+        filename = file_path.name.lower()
+        extension = file_path.suffix.lower()
+
+        reasons = []
+
+        # -------------------------------------------------
+        # Suspicious PHP files
+        # -------------------------------------------------
+
+        if extension == ".php":
+
+            if filename in suspicious_php_names:
+                reasons.append(
+                    "suspicious PHP filename"
+                )
+
+        # -------------------------------------------------
+        # Suspicious file names
+        # -------------------------------------------------
+
+        for keyword in suspicious_keywords:
+
+            if keyword in filename:
+                reasons.append(
+                    f"sensitive keyword '{keyword}'"
+                )
+                break
+
+        # -------------------------------------------------
+        # Hidden/configuration files
+        # -------------------------------------------------
+
+        if filename.startswith("."):
+            reasons.append("hidden file")
+
+        if extension in {
+            ".env", ".ini", ".conf", ".config"
+        }:
+            reasons.append(
+                "configuration file requiring review"
+            )
+
+        # -------------------------------------------------
+        # Large JavaScript files
+        # -------------------------------------------------
+
+        try:
+            file_size = file_path.stat().st_size
+
+            if extension in {".js", ".mjs"}:
+                if file_size > 500000:
+                    reasons.append(
+                        "unusually large JavaScript file"
+                    )
+
+        except OSError:
+            pass
+
+        if reasons:
+
+            relative_path = file_path.relative_to(directory)
+
+            suspicious_files.append(
+                (relative_path, reasons)
+            )
+
+    # -----------------------------------------------------
+    # Security investigation report
+    # -----------------------------------------------------
+
+    print("\nSECURITY INVESTIGATION CANDIDATES")
+    print("-" * 70)
+
+    if not suspicious_files:
+
+        print("No files requiring immediate investigation were found.")
+
+    else:
+
+        for file_path, reasons in suspicious_files:
+
+            print(f"\nFile: {file_path}")
+
+            print("Reason(s):")
+
+            for reason in reasons:
+                print(f"  [+] {reason}")
+
+    # -----------------------------------------------------
+    # Summary
+    # -----------------------------------------------------
+
+    print("\n" + "=" * 70)
+    print("                     ANALYSIS SUMMARY")
+    print("=" * 70)
+
+    if file_counts["PHP"] > 0:
+        print(
+            "[!] PHP files detected - "
+            "review server-side processing logic."
+        )
+
+    if file_counts["JavaScript"] > 0:
+        print(
+            "[!] JavaScript files detected - "
+            "review scripts for suspicious behavior."
+        )
+
+    if file_counts["Configuration"] > 0:
+        print(
+            "[!] Configuration files detected - "
+            "check for exposed credentials or settings."
+        )
+
+    if suspicious_files:
+        print(
+            f"[!] {len(suspicious_files)} file(s) "
+            "require further security investigation."
+        )
+    else:
+        print(
+            "[+] No obvious suspicious files identified."
+        )
+
+    print("\nNote: This program performs static analysis.")
+    print("Do not execute unknown phishing-kit files.")
+
+
+# ---------------------------------------------------------
+# Main Program
+# ---------------------------------------------------------
+
+if __name__ == "__main__":
+
+    print("Phishing Kit Structure Analyzer")
+    print("--------------------------------")
+
+    directory = input(
+        "Enter the path of the extracted phishing kit: "
+    ).strip()
+
+    analyze_phishing_kit(directory)
