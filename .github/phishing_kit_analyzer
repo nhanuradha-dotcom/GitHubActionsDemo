@@ -1,0 +1,374 @@
+import os
+import re
+import argparse
+from pathlib import Path
+from urllib.parse import urlparse
+
+
+# ---------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------
+
+SUSPICIOUS_PHP_NAMES = {
+    "login.php",
+    "verify.php",
+    "verification.php",
+    "validate.php",
+    "secure.php",
+    "update.php",
+    "process.php",
+    "submit.php",
+    "auth.php"
+}
+
+SUSPICIOUS_KEYWORDS = [
+    "password",
+    "passwd",
+    "credential",
+    "login",
+    "signin",
+    "verify",
+    "verification",
+    "bank",
+    "card",
+    "cvv",
+    "otp",
+    "security code"
+]
+
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+# ---------------------------------------------------------
+# Utility functions
+# ---------------------------------------------------------
+
+def read_file(file_path):
+    """Read a text file safely."""
+    try:
+        if file_path.stat().st_size > MAX_FILE_SIZE:
+            return ""
+
+        return file_path.read_text(
+            encoding="utf-8",
+            errors="ignore"
+        )
+
+    except (OSError, UnicodeError):
+        return ""
+
+
+def is_external_url(url):
+    """Check whether a URL points to an external domain."""
+    try:
+        parsed = urlparse(url)
+
+        return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------
+# Analysis functions
+# ---------------------------------------------------------
+
+def analyze_files(root):
+    results = {
+        "html_files": 0,
+        "php_files": 0,
+        "javascript_files": 0,
+        "forms": 0,
+        "password_fields": 0,
+        "external_urls": 0,
+        "suspicious_php": [],
+        "obfuscated_js": 0,
+        "redirects": 0,
+        "suspicious_keywords": 0
+    }
+
+    root = Path(root)
+
+    for file_path in root.rglob("*"):
+
+        if not file_path.is_file():
+            continue
+
+        extension = file_path.suffix.lower()
+        filename = file_path.name.lower()
+
+        # -------------------------------------------------
+        # File type analysis
+        # -------------------------------------------------
+
+        if extension in {".html", ".htm"}:
+            results["html_files"] += 1
+
+        elif extension == ".php":
+            results["php_files"] += 1
+
+        elif extension in {".js", ".mjs"}:
+            results["javascript_files"] += 1
+
+        # -------------------------------------------------
+        # Suspicious PHP filename analysis
+        # -------------------------------------------------
+
+        if extension == ".php" and filename in SUSPICIOUS_PHP_NAMES:
+            results["suspicious_php"].append(
+                str(file_path.relative_to(root))
+            )
+
+        # -------------------------------------------------
+        # Analyze textual website files
+        # -------------------------------------------------
+
+        if extension not in {
+            ".html", ".htm", ".php", ".js", ".mjs", ".txt"
+        }:
+            continue
+
+        content = read_file(file_path)
+
+        if not content:
+            continue
+
+        lower_content = content.lower()
+
+        # -------------------------------------------------
+        # HTML form detection
+        # -------------------------------------------------
+
+        if extension in {".html", ".htm", ".php"}:
+
+            forms = re.findall(
+                r"<form\b",
+                lower_content
+            )
+
+            results["forms"] += len(forms)
+
+            # Password field detection
+            password_fields = re.findall(
+                r'<input[^>]+type\s*=\s*["\']password["\']',
+                lower_content
+            )
+
+            results["password_fields"] += len(password_fields)
+
+        # -------------------------------------------------
+        # External URL detection
+        # -------------------------------------------------
+
+        urls = re.findall(
+            r'https?://[^\s\'"<>)]+',
+            content,
+            flags=re.IGNORECASE
+        )
+
+        for url in urls:
+            if is_external_url(url):
+                results["external_urls"] += 1
+
+        # -------------------------------------------------
+        # Suspicious keyword detection
+        # -------------------------------------------------
+
+        for keyword in SUSPICIOUS_KEYWORDS:
+
+            if keyword in lower_content:
+                results["suspicious_keywords"] += 1
+
+        # -------------------------------------------------
+        # JavaScript obfuscation detection
+        # -------------------------------------------------
+
+        if extension in {".js", ".mjs", ".html", ".htm", ".php"}:
+
+            obfuscation_patterns = [
+                r"eval\s*\(",
+                r"atob\s*\(",
+                r"fromCharCode\s*\(",
+                r"unescape\s*\(",
+                r"document\.write\s*\(",
+                r"String\.fromCharCode"
+            ]
+
+            for pattern in obfuscation_patterns:
+
+                if re.search(
+                    pattern,
+                    content,
+                    flags=re.IGNORECASE
+                ):
+                    results["obfuscated_js"] += 1
+                    break
+
+        # -------------------------------------------------
+        # Redirect detection
+        # -------------------------------------------------
+
+        redirect_patterns = [
+            r"window\.location",
+            r"location\.href",
+            r"location\.replace",
+            r"<meta[^>]+http-equiv\s*=\s*[\"']refresh"
+        ]
+
+        for pattern in redirect_patterns:
+
+            if re.search(
+                pattern,
+                content,
+                flags=re.IGNORECASE
+            ):
+                results["redirects"] += 1
+                break
+
+    return results
+
+
+# ---------------------------------------------------------
+# Risk calculation
+# ---------------------------------------------------------
+
+def calculate_risk(results):
+
+    score = 0
+    reasons = []
+
+    if results["forms"] > 0:
+        score += 10
+        reasons.append("HTML form detected")
+
+    if results["password_fields"] > 0:
+        score += 20
+        reasons.append("Password input field detected")
+
+    if results["external_urls"] > 0:
+        score += 15
+        reasons.append("External URL detected")
+
+    if results["suspicious_php"]:
+        score += 20
+        reasons.append("Suspicious PHP processing files detected")
+
+    if results["obfuscated_js"] > 0:
+        score += 15
+        reasons.append("Potential JavaScript obfuscation detected")
+
+    if results["redirects"] > 0:
+        score += 10
+        reasons.append("Potential redirect detected")
+
+    if results["suspicious_keywords"] >= 3:
+        score += 10
+        reasons.append("Multiple credential-related keywords detected")
+
+    # Limit score to 100
+    score = min(score, 100)
+
+    if score >= 60:
+        classification = "HIGH RISK"
+
+    elif score >= 30:
+        classification = "MEDIUM RISK"
+
+    else:
+        classification = "LOW RISK"
+
+    return score, classification, reasons
+
+
+# ---------------------------------------------------------
+# Report generation
+# ---------------------------------------------------------
+
+def display_report(results, score, classification, reasons):
+
+    print("\n" + "=" * 60)
+    print("             PHISHING KIT ANALYSIS REPORT")
+    print("=" * 60)
+
+    print(f"\nHTML files              : {results['html_files']}")
+    print(f"PHP files               : {results['php_files']}")
+    print(f"JavaScript files        : {results['javascript_files']}")
+    print(f"HTML forms              : {results['forms']}")
+    print(f"Password fields         : {results['password_fields']}")
+    print(f"External URLs           : {results['external_urls']}")
+    print(f"Obfuscated JS indicators: {results['obfuscated_js']}")
+    print(f"Redirect indicators     : {results['redirects']}")
+    print(f"Suspicious keywords     : {results['suspicious_keywords']}")
+
+    print("\nSuspicious PHP files:")
+
+    if results["suspicious_php"]:
+        for file in results["suspicious_php"]:
+            print(f"  - {file}")
+    else:
+        print("  None detected")
+
+    print("\nRisk Indicators:")
+
+    if reasons:
+        for reason in reasons:
+            print(f"  [+] {reason}")
+    else:
+        print("  No major indicators detected")
+
+    print("\n" + "-" * 60)
+    print(f"RISK SCORE     : {score}/100")
+    print(f"CLASSIFICATION : {classification}")
+    print("-" * 60)
+
+    print("\nNote:")
+    print("This tool performs static analysis only.")
+    print("Do not open or execute unknown phishing-kit files.")
+
+
+# ---------------------------------------------------------
+# Main program
+# ---------------------------------------------------------
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description="Static phishing kit analysis tool"
+    )
+
+    parser.add_argument(
+        "directory",
+        help="Path to the extracted website directory"
+    )
+
+    args = parser.parse_args()
+
+    root = Path(args.directory)
+
+    if not root.exists():
+        print("Error: Directory does not exist.")
+        return
+
+    if not root.is_dir():
+        print("Error: Path is not a directory.")
+        return
+
+    print("Analyzing phishing-kit directory...")
+    print(f"Directory: {root}")
+
+    results = analyze_files(root)
+
+    score, classification, reasons = calculate_risk(
+        results
+    )
+
+    display_report(
+        results,
+        score,
+        classification,
+        reasons
+    )
+
+
+if __name__ == "__main__":
+    main()
