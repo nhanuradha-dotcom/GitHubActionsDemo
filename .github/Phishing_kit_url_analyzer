@@ -1,0 +1,433 @@
+import re
+from pathlib import Path
+from urllib.parse import urlparse, parse_qs
+import ipaddress
+
+
+# ---------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------
+
+TEXT_EXTENSIONS = {
+    ".html", ".htm", ".php", ".js", ".mjs",
+    ".css", ".json", ".txt", ".xml", ".svg"
+}
+
+SUSPICIOUS_PARAMETERS = {
+    "redirect",
+    "redirect_url",
+    "return",
+    "return_url",
+    "url",
+    "next",
+    "target",
+    "dest",
+    "destination",
+    "continue",
+    "token",
+    "session",
+    "auth",
+    "login",
+    "user",
+    "username",
+    "password",
+    "passwd",
+    "otp",
+    "code"
+}
+
+
+# ---------------------------------------------------------
+# Extract URLs from files
+# ---------------------------------------------------------
+
+def extract_urls(content):
+    """
+    Extract HTTP and HTTPS URLs from text.
+    """
+    pattern = r'https?://[^\s\'"<>)\]]+'
+
+    urls = re.findall(
+        pattern,
+        content,
+        flags=re.IGNORECASE
+    )
+
+    # Remove common trailing characters
+    cleaned_urls = []
+
+    for url in urls:
+        url = url.rstrip(".,;:!?")
+
+        if url not in cleaned_urls:
+            cleaned_urls.append(url)
+
+    return cleaned_urls
+
+
+# ---------------------------------------------------------
+# Check IP address
+# ---------------------------------------------------------
+
+def is_ip_address(hostname):
+    """
+    Determine whether hostname is an IPv4 or IPv6 address.
+    """
+    if not hostname:
+        return False
+
+    try:
+        ipaddress.ip_address(hostname)
+        return True
+
+    except ValueError:
+        return False
+
+
+# ---------------------------------------------------------
+# Analyze a URL
+# ---------------------------------------------------------
+
+def analyze_url(url):
+
+    result = {
+        "url": url,
+        "scheme": "",
+        "domain": "",
+        "ip_based": False,
+        "suspicious_parameters": [],
+        "risk": "LOW",
+        "reasons": []
+    }
+
+    try:
+        parsed = urlparse(url)
+
+        result["scheme"] = parsed.scheme.lower()
+        result["domain"] = parsed.hostname or ""
+
+        # -------------------------------------------------
+        # Check HTTP
+        # -------------------------------------------------
+
+        if result["scheme"] == "http":
+            result["reasons"].append(
+                "Uses unencrypted HTTP"
+            )
+
+        # -------------------------------------------------
+        # Check IP-based URL
+        # -------------------------------------------------
+
+        if is_ip_address(result["domain"]):
+
+            result["ip_based"] = True
+
+            result["reasons"].append(
+                "Uses an IP address instead of a domain name"
+            )
+
+        # -------------------------------------------------
+        # Analyze query parameters
+        # -------------------------------------------------
+
+        parameters = parse_qs(
+            parsed.query,
+            keep_blank_values=True
+        )
+
+        for parameter in parameters:
+
+            parameter_lower = parameter.lower()
+
+            if parameter_lower in SUSPICIOUS_PARAMETERS:
+
+                result["suspicious_parameters"].append(
+                    parameter
+                )
+
+        if result["suspicious_parameters"]:
+
+            result["reasons"].append(
+                "Contains suspicious URL parameters"
+            )
+
+        # -------------------------------------------------
+        # Check for encoded URLs / redirects
+        # -------------------------------------------------
+
+        query_lower = parsed.query.lower()
+
+        if (
+            "http%3a%2f%2f" in query_lower
+            or "https%3a%2f%2f" in query_lower
+        ):
+
+            result["reasons"].append(
+                "Contains an encoded URL"
+            )
+
+        # -------------------------------------------------
+        # Risk classification
+        # -------------------------------------------------
+
+        score = 0
+
+        if result["scheme"] == "http":
+            score += 20
+
+        if result["ip_based"]:
+            score += 40
+
+        if result["suspicious_parameters"]:
+            score += 25
+
+        if (
+            "Contains an encoded URL"
+            in result["reasons"]
+        ):
+            score += 15
+
+        if score >= 60:
+
+            result["risk"] = "HIGH"
+
+        elif score >= 30:
+
+            result["risk"] = "MEDIUM"
+
+        else:
+
+            result["risk"] = "LOW"
+
+        return result
+
+    except Exception as error:
+
+        result["risk"] = "UNKNOWN"
+
+        result["reasons"].append(
+            f"Unable to parse URL: {error}"
+        )
+
+        return result
+
+
+# ---------------------------------------------------------
+# Scan phishing-kit directory
+# ---------------------------------------------------------
+
+def scan_directory(directory):
+
+    directory = Path(directory)
+
+    if not directory.exists():
+
+        print("Error: Directory does not exist.")
+        return []
+
+    if not directory.is_dir():
+
+        print("Error: Path is not a directory.")
+        return []
+
+    findings = []
+
+    for file_path in directory.rglob("*"):
+
+        if not file_path.is_file():
+            continue
+
+        if file_path.suffix.lower() not in TEXT_EXTENSIONS:
+            continue
+
+        try:
+
+            content = file_path.read_text(
+                encoding="utf-8",
+                errors="ignore"
+            )
+
+        except OSError:
+
+            continue
+
+        urls = extract_urls(content)
+
+        for url in urls:
+
+            analysis = analyze_url(url)
+
+            analysis["file"] = str(
+                file_path.relative_to(directory)
+            )
+
+            findings.append(analysis)
+
+    return findings
+
+
+# ---------------------------------------------------------
+# Display report
+# ---------------------------------------------------------
+
+def display_report(findings):
+
+    print("\n" + "=" * 90)
+    print("                 PHISHING KIT URL ANALYSIS REPORT")
+    print("=" * 90)
+
+    if not findings:
+
+        print("\nNo HTTP/HTTPS URLs were found.")
+        return
+
+    print(f"\nTotal URLs found: {len(findings)}")
+
+    # -----------------------------------------------------
+    # Summary
+    # -----------------------------------------------------
+
+    low = sum(
+        1 for item in findings
+        if item["risk"] == "LOW"
+    )
+
+    medium = sum(
+        1 for item in findings
+        if item["risk"] == "MEDIUM"
+    )
+
+    high = sum(
+        1 for item in findings
+        if item["risk"] == "HIGH"
+    )
+
+    ip_count = sum(
+        1 for item in findings
+        if item["ip_based"]
+    )
+
+    http_count = sum(
+        1 for item in findings
+        if item["scheme"] == "http"
+    )
+
+    suspicious_parameter_count = sum(
+        1 for item in findings
+        if item["suspicious_parameters"]
+    )
+
+    print("\nSUMMARY")
+    print("-" * 90)
+
+    print(f"LOW risk URLs                    : {low}")
+    print(f"MEDIUM risk URLs                 : {medium}")
+    print(f"HIGH risk URLs                   : {high}")
+    print(f"IP-address-based URLs            : {ip_count}")
+    print(f"HTTP URLs                        : {http_count}")
+    print(
+        f"URLs with suspicious parameters  : "
+        f"{suspicious_parameter_count}"
+    )
+
+    # -----------------------------------------------------
+    # Detailed URL analysis
+    # -----------------------------------------------------
+
+    print("\nDETAILED URL ANALYSIS")
+    print("-" * 90)
+
+    for number, item in enumerate(findings, start=1):
+
+        print(f"\nURL {number}")
+        print(f"Source file : {item['file']}")
+        print(f"URL         : {item['url']}")
+        print(f"Domain      : {item['domain']}")
+        print(f"Protocol    : {item['scheme'].upper()}")
+
+        print(
+            "IP based    : "
+            + ("YES" if item["ip_based"] else "NO")
+        )
+
+        if item["suspicious_parameters"]:
+
+            print(
+                "Suspicious parameters: "
+                + ", ".join(
+                    item["suspicious_parameters"]
+                )
+            )
+
+        else:
+
+            print("Suspicious parameters: None")
+
+        print(f"Risk        : {item['risk']}")
+
+        if item["reasons"]:
+
+            print("Reasons:")
+
+            for reason in item["reasons"]:
+
+                print(f"  [+] {reason}")
+
+    # -----------------------------------------------------
+    # High-risk URLs
+    # -----------------------------------------------------
+
+    print("\n" + "=" * 90)
+    print("                         HIGH-RISK URLs")
+    print("=" * 90)
+
+    high_risk = [
+        item for item in findings
+        if item["risk"] == "HIGH"
+    ]
+
+    if not high_risk:
+
+        print("No high-risk URLs detected.")
+
+    else:
+
+        for item in high_risk:
+
+            print(f"\nURL  : {item['url']}")
+            print(f"File : {item['file']}")
+
+            for reason in item["reasons"]:
+
+                print(f"  - {reason}")
+
+    print("\n" + "=" * 90)
+
+    print(
+        "Note: URLs were analyzed statically. "
+        "The program does not visit or connect to them."
+    )
+
+
+# ---------------------------------------------------------
+# Main program
+# ---------------------------------------------------------
+
+def main():
+
+    print("=" * 60)
+    print("        PHISHING KIT STATIC URL ANALYZER")
+    print("=" * 60)
+
+    directory = input(
+        "\nEnter the path of the extracted phishing kit: "
+    ).strip()
+
+    findings = scan_directory(directory)
+
+    display_report(findings)
+
+
+if __name__ == "__main__":
+    main()
