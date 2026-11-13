@@ -1,0 +1,41 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Monthly cyberattack incidents
+attacks = [20, 25, 30, 28, 35, 40,
+           45, 42, 50, 55, 60, 65]
+
+window = 3
+
+# Calculate moving averages
+moving_average = []
+
+for i in range(window, len(attacks)):
+    avg = np.mean(attacks[i-window:i])
+    moving_average.append(avg)
+
+# Predict next month
+next_month = np.mean(attacks[-window:])
+
+print("Moving Average Values:")
+
+for value in moving_average:
+    print(round(value, 2))
+
+print("\nPredicted attacks next month:",
+      round(next_month))
+
+# Visualization
+plt.plot(range(1, 13), attacks,
+         marker="o", label="Actual Attacks")
+
+plt.axhline(next_month, linestyle="--",
+            label="Next Month Forecast")
+
+plt.title("Cyber Threat Moving Average")
+plt.xlabel("Month")
+plt.ylabel("Attack Count")
+plt.legend()
+plt.grid()
+plt.show()
