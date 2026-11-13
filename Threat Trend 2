@@ -1,0 +1,30 @@
+
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+threats = {
+    "Phishing": [20, 25, 30, 35, 40, 45],
+    "Malware": [50, 45, 42, 38, 35, 30],
+    "Ransomware": [10, 11, 10, 12, 11, 12],
+    "SQL Injection": [10, 15, 20, 25, 30, 35]
+}
+
+X = np.arange(1, 7).reshape(-1, 1)
+
+for threat, incidents in threats.items():
+
+    model = LinearRegression()
+    model.fit(X, incidents)
+
+    slope = model.coef_[0]
+
+    if slope > 1:
+        status = "Increasing"
+    elif slope < -1:
+        status = "Decreasing"
+    else:
+        status = "Stable"
+
+    print(threat, ":", status)
+    print("Growth rate per month:", round(slope, 2))
+    print("------------------------")
