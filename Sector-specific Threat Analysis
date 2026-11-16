@@ -1,0 +1,194 @@
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# ------------------------------------------------
+# STEP 1: Create cybersecurity threat dataset
+# ------------------------------------------------
+
+data = {
+    "Sector": [
+        "Banking", "Banking", "Banking", "Banking",
+        "Healthcare", "Healthcare", "Healthcare",
+        "Education", "Education", "Education",
+        "E-commerce", "E-commerce", "E-commerce",
+        "Government", "Government", "Government"
+    ],
+
+    "Threat": [
+        "Phishing", "Ransomware", "Financial Fraud", "Phishing",
+        "Ransomware", "Data Theft", "Phishing",
+        "Phishing", "Data Theft", "DDoS",
+        "Payment Fraud", "Phishing", "DDoS",
+        "Cyber Espionage", "Ransomware", "Data Theft"
+    ],
+
+    "Severity": [
+        "High", "Critical", "High", "Medium",
+        "Critical", "High", "Medium",
+        "Medium", "High", "High",
+        "Critical", "High", "Medium",
+        "Critical", "Critical", "High"
+    ]
+}
+
+# Convert dictionary into DataFrame
+df = pd.DataFrame(data)
+
+# ------------------------------------------------
+# STEP 2: Display complete dataset
+# ------------------------------------------------
+
+print("\n========== CYBER THREAT DATASET ==========")
+print(df.to_string(index=False))
+
+# ------------------------------------------------
+# STEP 3: Count total threats in each sector
+# ------------------------------------------------
+
+sector_count = df["Sector"].value_counts()
+
+print("\n========== SECTOR-WISE THREAT COUNT ==========")
+print(sector_count)
+
+# ------------------------------------------------
+# STEP 4: Analyze threat types in each sector
+# ------------------------------------------------
+
+threat_analysis = pd.crosstab(
+    df["Sector"],
+    df["Threat"]
+)
+
+print("\n========== SECTOR-WISE THREAT ANALYSIS ==========")
+print(threat_analysis)
+
+# ------------------------------------------------
+# STEP 5: Find most common threat in each sector
+# ------------------------------------------------
+
+print("\n========== MOST COMMON THREAT ==========")
+
+for sector in df["Sector"].unique():
+
+    sector_data = df[df["Sector"] == sector]
+
+    most_common = sector_data["Threat"].value_counts()
+
+    highest_count = most_common.max()
+
+    common_threats = most_common[
+        most_common == highest_count
+    ].index.tolist()
+
+    print(
+        sector,
+        ":", ", ".join(common_threats),
+        "- Count:", highest_count
+    )
+
+# ------------------------------------------------
+# STEP 6: Analyze threat severity
+# ------------------------------------------------
+
+severity_analysis = pd.crosstab(
+    df["Sector"],
+    df["Severity"]
+)
+
+print("\n========== SEVERITY ANALYSIS ==========")
+print(severity_analysis)
+
+# ------------------------------------------------
+# STEP 7: Calculate threat percentage
+# ------------------------------------------------
+
+total_threats = len(df)
+
+percentage = (
+    sector_count / total_threats
+) * 100
+
+print("\n========== SECTOR-WISE THREAT PERCENTAGE ==========")
+
+print(percentage.round(2))
+
+# ------------------------------------------------
+# STEP 8: Display highest threat sector
+# ------------------------------------------------
+
+highest_sector = sector_count.idxmax()
+highest_count = sector_count.max()
+
+print("\n========== HIGHEST THREAT SECTOR ==========")
+
+print("Sector:", highest_sector)
+print("Number of threats:", highest_count)
+
+# ------------------------------------------------
+# STEP 9: Generate bar chart
+# ------------------------------------------------
+
+plt.figure(figsize=(9, 5))
+
+sector_count.plot(
+    kind="bar",
+    title="Cyber Threats Across Different Sectors",
+    xlabel="Sector",
+    ylabel="Number of Threats"
+)
+
+plt.xticks(rotation=30)
+plt.tight_layout()
+plt.show()
+
+# ------------------------------------------------
+# STEP 10: Generate severity chart
+# ------------------------------------------------
+
+severity_analysis.plot(
+    kind="bar",
+    figsize=(9, 5)
+)
+
+plt.title("Threat Severity Across Different Sectors")
+plt.xlabel("Sector")
+plt.ylabel("Number of Threats")
+
+plt.xticks(rotation=30)
+plt.tight_layout()
+plt.show()
+
+# ------------------------------------------------
+# STEP 11: Generate threat distribution chart
+# ------------------------------------------------
+
+threat_totals = df["Threat"].value_counts()
+
+plt.figure(figsize=(9, 5))
+
+threat_totals.plot(
+    kind="pie",
+    autopct="%1.1f%%",
+    startangle=90
+)
+
+plt.title("Overall Cyber Threat Distribution")
+plt.ylabel("")
+plt.tight_layout()
+plt.show()
+
+# ------------------------------------------------
+# STEP 12: Save analysis report
+# ------------------------------------------------
+
+threat_analysis.to_csv(
+    "sector_threat_analysis.csv"
+)
+
+severity_analysis.to_csv(
+    "sector_severity_analysis.csv"
+)
+
+print("\nAnalysis reports saved successfully!")
+print("\n========== PROGRAM COMPLETED ==========")
