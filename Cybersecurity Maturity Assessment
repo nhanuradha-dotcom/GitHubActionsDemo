@@ -1,0 +1,48 @@
+# Cybersecurity Maturity Assessment
+
+import pandas as pd
+
+# Sample maturity assessment data
+data = {
+    "Security Area": [
+        "Access Control",
+        "Network Security",
+        "Incident Response",
+        "Threat Intelligence",
+        "Data Protection"
+    ],
+    "Score": [3, 2, 4, 2, 3]
+}
+
+df = pd.DataFrame(data)
+
+# Calculate average maturity
+average = df["Score"].mean()
+
+# Determine maturity level
+if average < 2:
+    level = "Level 1 - Initial"
+elif average < 3:
+    level = "Level 2 - Developing"
+elif average < 4:
+    level = "Level 3 - Defined"
+elif average < 4.5:
+    level = "Level 4 - Managed"
+else:
+    level = "Level 5 - Optimizing"
+
+# Display assessment
+print("CYBERSECURITY MATURITY ASSESSMENT")
+print("---------------------------------")
+
+print(df.to_string(index=False))
+
+print("\nAverage Maturity Score:", round(average, 2))
+print("Overall Maturity:", level)
+
+# Identify weak security areas
+print("\nAreas Requiring Improvement:")
+
+for index, row in df.iterrows():
+    if row["Score"] <= 2:
+        print("-", row["Security Area"])
