@@ -1,0 +1,27 @@
+
+sources = [
+    {"source": "CISA", "verified": 95, "total": 100},
+    {"source": "OSINT Feed", "verified": 75, "total": 100},
+    {"source": "Security Blog", "verified": 60, "total": 100},
+    {"source": "Threat Sharing Group", "verified": 85, "total": 100}
+]
+
+print("THREAT INTELLIGENCE SOURCE ANALYSIS")
+print("-----------------------------------")
+
+for item in sources:
+    reliability = (
+        item["verified"] / item["total"]
+    ) * 100
+
+    print("Source:", item["source"])
+    print("Verification Rate:", round(reliability, 2), "%")
+
+    if reliability >= 90:
+        print("Assessment: High verification rate")
+    elif reliability >= 70:
+        print("Assessment: Moderate verification rate")
+    else:
+        print("Assessment: Low verification rate")
+
+    print()
