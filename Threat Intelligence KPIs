@@ -1,0 +1,66 @@
+
+# Threat Intelligence KPI Analysis
+
+# Sample cybersecurity incident data
+incidents = [
+    {"incident": "Phishing", "detection_time": 2, "response_time": 3},
+    {"incident": "Ransomware", "detection_time": 4, "response_time": 5},
+    {"incident": "Data Theft", "detection_time": 3, "response_time": 2},
+    {"incident": "Malware", "detection_time": 1, "response_time": 2},
+]
+
+# Step 1: Calculate MTTD
+total_detection_time = sum(
+    item["detection_time"] for item in incidents
+)
+
+mttd = total_detection_time / len(incidents)
+
+# Step 2: Calculate MTTR
+total_response_time = sum(
+    item["response_time"] for item in incidents
+)
+
+mttr = total_response_time / len(incidents)
+
+# Step 3: Calculate Detection Rate
+total_threats = 100
+detected_threats = 85
+
+detection_rate = (
+    detected_threats / total_threats
+) * 100
+
+# Step 4: Calculate False Positive Percentage
+total_alerts = 200
+false_positives = 40
+
+false_positive_percentage = (
+    false_positives / total_alerts
+) * 100
+
+# Step 5: Calculate IOC Match Rate
+total_iocs = 500
+matched_iocs = 50
+
+ioc_match_rate = (
+    matched_iocs / total_iocs
+) * 100
+
+# Step 6: Display Results
+print("THREAT INTELLIGENCE KPI REPORT")
+print("--------------------------------")
+
+print(f"Total Incidents: {len(incidents)}")
+
+print(f"MTTD: {mttd:.2f} hours")
+print(f"MTTR: {mttr:.2f} hours")
+
+print(f"Detection Rate: {detection_rate:.2f}%")
+
+print(
+    f"False Positive Percentage: "
+    f"{false_positive_percentage:.2f}%"
+)
+
+print(f"IOC Match Rate: {ioc_match_rate:.2f}%")
