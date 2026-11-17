@@ -1,0 +1,48 @@
+import pandas as pd
+
+# Sample cyber threat dataset
+data = {
+    "Threat": [
+        "Spear Phishing",
+        "Cyber Espionage",
+        "Ransomware",
+        "Military Network Spying",
+        "DDoS Attack",
+        "Supply Chain Attack"
+    ],
+
+    "Target": [
+        "Government",
+        "Military",
+        "Hospital",
+        "Defence",
+        "Banking",
+        "Government"
+    ],
+
+    "Nation_State_Related": [
+        "Yes",
+        "Yes",
+        "No",
+        "Yes",
+        "No",
+        "Yes"
+    ]
+}
+
+df = pd.DataFrame(data)
+
+print("Cyber Threat Analysis")
+print(df)
+
+# Identify potential nation-state-related threats
+result = df[
+    df["Nation_State_Related"] == "Yes"
+]
+
+print("\nPotential Nation-State-Related Threats:")
+print(result)
+
+# Count identified threats
+print("\nThreat Count:")
+print(result["Threat"].count())
