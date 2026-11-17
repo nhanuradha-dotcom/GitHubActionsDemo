@@ -1,0 +1,30 @@
+
+import pandas as pd
+
+data = {
+    "KPI": [
+        "Threats Detected",
+        "Threats Missed",
+        "False Alerts",
+        "True Alerts",
+        "IOC Matches"
+    ],
+    "Count": [90, 10, 15, 85, 40]
+}
+
+df = pd.DataFrame(data)
+
+total_threats = 100
+detection_rate = 90 / total_threats * 100
+missed_rate = 10 / total_threats * 100
+false_alert_rate = 15 / (15 + 85) * 100
+ioc_match_rate = 40 / 200 * 100
+
+print("THREAT INTELLIGENCE KPI DASHBOARD")
+print(df)
+
+print("\nKPI RESULTS")
+print("Detection Rate:", detection_rate, "%")
+print("Missed Threat Rate:", missed_rate, "%")
+print("False Alert Rate:", false_alert_rate, "%")
+print("IOC Match Rate:", ioc_match_rate, "%")
