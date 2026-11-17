@@ -1,0 +1,28 @@
+
+threats = [
+    {"name": "Phishing", "severity": 7, "criticality": 8},
+    {"name": "Ransomware", "severity": 10, "criticality": 10},
+    {"name": "Malware", "severity": 6, "criticality": 5},
+    {"name": "Data Theft", "severity": 9, "criticality": 9},
+    {"name": "Port Scanning", "severity": 3, "criticality": 4}
+]
+
+print("THREAT RISK PRIORITIZATION")
+print("--------------------------")
+
+for threat in threats:
+    risk = threat["severity"] * threat["criticality"]
+
+    if risk >= 80:
+        priority = "Critical"
+    elif risk >= 50:
+        priority = "High"
+    elif risk >= 25:
+        priority = "Medium"
+    else:
+        priority = "Low"
+
+    print("Threat:", threat["name"])
+    print("Risk Score:", risk)
+    print("Priority:", priority)
+    print()
