@@ -1,0 +1,180 @@
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# ---------------------------------------
+# STEP 1: Create security maturity dataset
+# ---------------------------------------
+
+data = {
+    "Security_Area": [
+        "Access Control",
+        "Network Security",
+        "Data Encryption",
+        "Incident Response",
+        "Employee Awareness",
+        "Backup Management",
+        "Vulnerability Management",
+        "Endpoint Security"
+    ],
+
+    "Maturity_Score": [
+        4, 2, 3, 1, 2, 5, 1, 3
+    ]
+}
+
+df = pd.DataFrame(data)
+
+# ---------------------------------------
+# STEP 2: Define maturity levels
+# ---------------------------------------
+
+def maturity_level(score):
+
+    if score == 0:
+        return "Not Implemented"
+    elif score <= 1:
+        return "Initial"
+    elif score <= 2:
+        return "Developing"
+    elif score <= 3:
+        return "Defined"
+    elif score <= 4:
+        return "Managed"
+    else:
+        return "Optimized"
+
+df["Maturity_Level"] = df["Maturity_Score"].apply(
+    maturity_level
+)
+
+# ---------------------------------------
+# STEP 3: Identify weak security areas
+# ---------------------------------------
+
+def identify_weakness(score):
+
+    if score <= 1:
+        return "Critical"
+    elif score == 2:
+        return "High"
+    elif score == 3:
+        return "Moderate"
+    else:
+        return "Strong"
+
+df["Security_Status"] = df["Maturity_Score"].apply(
+    identify_weakness
+)
+
+# ---------------------------------------
+# STEP 4: Display assessment results
+# ---------------------------------------
+
+print("\nSECURITY MATURITY ASSESSMENT")
+print("--------------------------------")
+
+print(df.to_string(index=False))
+
+# ---------------------------------------
+# STEP 5: Identify weak areas
+# ---------------------------------------
+
+weak_areas = df[df["Maturity_Score"] <= 2]
+
+print("\nWEAK SECURITY AREAS")
+print("--------------------------------")
+
+if not weak_areas.empty:
+    print(weak_areas[
+        ["Security_Area", "Maturity_Score",
+         "Security_Status"]
+    ].to_string(index=False))
+else:
+    print("No weak security areas identified.")
+
+# ---------------------------------------
+# STEP 6: Calculate average maturity
+# ---------------------------------------
+
+average_score = df["Maturity_Score"].mean()
+
+print("\nAverage Security Maturity:",
+      round(average_score, 2), "/ 5")
+
+# ---------------------------------------
+# STEP 7: Visualize maturity scores
+# ---------------------------------------
+
+plt.figure(figsize=(11, 6))
+
+colors = [
+    "red" if score <= 1 else
+    "orange" if score == 2 else
+    "gold" if score == 3 else
+    "green"
+    for score in df["Maturity_Score"]
+]
+
+plt.barh(
+    df["Security_Area"],
+    df["Maturity_Score"],
+    color=colors
+)
+
+plt.axvline(
+    x=3,
+    linestyle="--",
+    label="Minimum Target Score (3)"
+)
+
+plt.xlabel("Maturity Score (0-5)")
+plt.ylabel("Security Areas")
+
+plt.title("Cybersecurity Maturity Assessment")
+
+plt.xlim(0, 5)
+plt.legend()
+plt.grid(axis="x", linestyle="--", alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+# ---------------------------------------
+# STEP 8: Generate recommendations
+# ---------------------------------------
+
+print("\nSECURITY IMPROVEMENT RECOMMENDATIONS")
+print("--------------------------------")
+
+recommendations = {
+    "Access Control":
+        "Implement MFA and role-based access control.",
+
+    "Network Security":
+        "Configure firewalls and network segmentation.",
+
+    "Data Encryption":
+        "Use encryption for sensitive data at rest and in transit.",
+
+    "Incident Response":
+        "Develop an incident response plan and conduct drills.",
+
+    "Employee Awareness":
+        "Conduct regular cybersecurity awareness training.",
+
+    "Backup Management":
+        "Maintain secure backups and test recovery procedures.",
+
+    "Vulnerability Management":
+        "Perform vulnerability scanning and timely patching.",
+
+    "Endpoint Security":
+        "Deploy endpoint protection and monitor devices."
+}
+
+for _, row in weak_areas.iterrows():
+
+    area = row["Security_Area"]
+
+    print(area, ":", recommendations[area])
