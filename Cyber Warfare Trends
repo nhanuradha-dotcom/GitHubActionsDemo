@@ -1,0 +1,112 @@
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Sample cyber warfare dataset
+data = {
+    "Year": [
+        2021, 2021, 2021, 2021,
+        2022, 2022, 2022, 2022,
+        2023, 2023, 2023, 2023,
+        2024, 2024, 2024, 2024,
+        2025, 2025, 2025, 2025
+    ],
+
+    "Sector": [
+        "Banking", "Healthcare", "Government", "Education",
+        "Banking", "Healthcare", "Government", "Education",
+        "Banking", "Healthcare", "Government", "Education",
+        "Banking", "Healthcare", "Government", "Education",
+        "Banking", "Healthcare", "Government", "Education"
+    ],
+
+    "Attack_Type": [
+        "Phishing", "Ransomware", "DDoS", "Data Theft",
+        "Ransomware", "Phishing", "DDoS", "Malware",
+        "Data Theft", "Ransomware", "Phishing", "DDoS",
+        "Ransomware", "DDoS", "Data Theft", "Phishing",
+        "AI Phishing", "Ransomware", "DDoS", "AI Phishing"
+    ],
+
+    "Incidents": [
+        30, 25, 40, 15,
+        45, 35, 55, 20,
+        50, 60, 65, 30,
+        70, 75, 80, 45,
+        90, 85, 100, 65
+    ]
+}
+
+# Create DataFrame
+df = pd.DataFrame(data)
+
+# Display dataset
+print("CYBER WARFARE DATA")
+print(df)
+
+# 1. Total attacks by year
+yearly_attacks = df.groupby("Year")["Incidents"].sum()
+
+print("\nTotal Attacks Per Year:")
+print(yearly_attacks)
+
+# 2. Most common attack types
+attack_analysis = df.groupby(
+    "Attack_Type"
+)["Incidents"].sum().sort_values(ascending=False)
+
+print("\nAttack Type Analysis:")
+print(attack_analysis)
+
+# 3. Most targeted sectors
+sector_analysis = df.groupby(
+    "Sector"
+)["Incidents"].sum().sort_values(ascending=False)
+
+print("\nSector Analysis:")
+print(sector_analysis)
+
+# 4. Year-wise attack trend
+plt.figure(figsize=(8, 5))
+yearly_attacks.plot(kind="line", marker="o")
+plt.title("Cyber Warfare Trends by Year")
+plt.xlabel("Year")
+plt.ylabel("Number of Incidents")
+plt.grid(True)
+plt.show()
+
+# 5. Attack type comparison
+plt.figure(figsize=(9, 5))
+attack_analysis.plot(kind="bar", color="orange")
+plt.title("Cyberattacks by Type")
+plt.xlabel("Attack Type")
+plt.ylabel("Number of Incidents")
+plt.xticks(rotation=30)
+plt.tight_layout()
+plt.show()
+
+# 6. Sector-wise cyberattack analysis
+plt.figure(figsize=(8, 5))
+sector_analysis.plot(kind="bar", color="green")
+plt.title("Cyberattacks by Sector")
+plt.xlabel("Sector")
+plt.ylabel("Number of Incidents")
+plt.xticks(rotation=30)
+plt.tight_layout()
+plt.show()
+
+# 7. Heatmap of attacks by year and sector
+pivot_data = df.pivot_table(
+    index="Sector",
+    columns="Year",
+    values="Incidents",
+    aggfunc="sum"
+)
+
+plt.figure(figsize=(9, 5))
+sns.heatmap(pivot_data, annot=True, cmap="Reds", fmt="g")
+plt.title("Cyber Warfare Attack Heatmap")
+plt.show()
+
+print("\nCyber Warfare Trend Analysis Completed!")
