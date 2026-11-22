@@ -1,0 +1,31 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+import time
+ 
+# Launch Chrome browser
+driver = webdriver.Chrome()
+ 
+# Open Google
+driver.get("https://www.google.com")
+ 
+# Maximize browser
+driver.maximize_window()
+ 
+# Locate search box using NAME locator
+search_box = driver.find_element(By.NAME, "q")
+ 
+# Enter search keyword
+search_box.send_keys("Python Programming")
+ 
+# Press Enter
+search_box.send_keys(Keys.ENTER)
+ 
+# Wait for results
+time.sleep(3)
+ 
+# Display page title
+print("Page Title:", driver.title)
+ 
+# Close browser
+driver.quit()
