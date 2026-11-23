@@ -1,0 +1,23 @@
+
+threats = [
+    {"name": "Ransomware", "score": 9},
+    {"name": "Phishing", "score": 7},
+    {"name": "DDoS", "score": 5},
+    {"name": "Malware", "score": 3},
+    {"name": "Data Theft", "score": 8}
+]
+
+for threat in threats:
+
+    score = threat["score"]
+
+    if score >= 8:
+        risk = "High"
+    elif score >= 5:
+        risk = "Medium"
+    else:
+        risk = "Low"
+
+    print(threat["name"],
+          ":", risk,
+          "(Score:", score, ")")
