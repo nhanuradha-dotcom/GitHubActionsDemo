@@ -1,0 +1,26 @@
+
+threats = {
+    "T1": "Phishing email targeting employees",
+    "T2": "Ransomware encrypting hospital files",
+    "T3": "DDoS attack on banking website",
+    "T4": "Unauthorized access using stolen passwords",
+    "T5": "Malware installed through a malicious download"
+}
+
+keywords = {
+    "Phishing": ["phishing", "email"],
+    "Ransomware": ["ransomware", "encrypting"],
+    "DDoS": ["ddos"],
+    "Unauthorized Access": ["unauthorized", "stolen passwords"],
+    "Malware": ["malware", "malicious download"]
+}
+
+for threat_id, description in threats.items():
+    category = "Other"
+
+    for name, words in keywords.items():
+        if any(word in description.lower() for word in words):
+            category = name
+            break
+
+    print(threat_id, "-", description, "=>", category)
