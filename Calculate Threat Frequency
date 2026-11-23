@@ -1,0 +1,28 @@
+
+from collections import Counter
+
+threats = [
+    "Phishing",
+    "Ransomware",
+    "Phishing",
+    "DDoS",
+    "Malware",
+    "Phishing",
+    "Ransomware",
+    "DDoS",
+    "Phishing"
+]
+
+frequency = Counter(threats)
+
+print("Threat Frequency Report")
+
+for threat, count in frequency.items():
+    print(threat, ":", count)
+
+most_common = frequency.most_common(1)
+
+print("\nMost Common Threat:",
+      most_common[0][0])
+print("Number of Incidents:",
+      most_common[0][1])
