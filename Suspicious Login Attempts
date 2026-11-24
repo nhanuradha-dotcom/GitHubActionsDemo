@@ -1,0 +1,32 @@
+
+from collections import Counter
+
+# Sample login records
+login_logs = [
+    ("192.168.1.10", "success"),
+    ("192.168.1.20", "failed"),
+    ("192.168.1.20", "failed"),
+    ("192.168.1.20", "failed"),
+    ("192.168.1.30", "success"),
+    ("192.168.1.40", "failed"),
+    ("192.168.1.40", "failed")
+]
+
+failed_attempts = Counter()
+
+# Analyze login records
+for ip, status in login_logs:
+    if status == "failed":
+        failed_attempts[ip] += 1
+
+# Detect suspicious IP addresses
+threshold = 3
+
+print("Suspicious Login Detection")
+print("--------------------------")
+
+for ip, count in failed_attempts.items():
+    if count >= threshold:
+        print("ALERT:", ip)
+        print("Failed attempts:", count)
+        print("Possible brute-force attack")
