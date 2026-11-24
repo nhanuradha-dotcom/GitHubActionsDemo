@@ -1,0 +1,60 @@
+
+# Cybercrime Economics Analysis System
+
+print("CYBERCRIME ECONOMICS ANALYSIS")
+print("--------------------------------")
+
+# Input hypothetical incident details
+revenue = float(input("Enter expected revenue (Rs.): "))
+operating_cost = float(input("Enter operating cost (Rs.): "))
+
+success_probability = float(
+    input("Enter estimated success probability (%): ")
+)
+
+detection_probability = float(
+    input("Enter estimated detection probability (%): ")
+)
+
+financial_loss = float(
+    input("Enter financial loss if detected (Rs.): ")
+)
+
+# Validate probability values
+if not (0 <= success_probability <= 100 and
+        0 <= detection_probability <= 100):
+    print("Error: Probabilities must be between 0 and 100.")
+
+elif min(revenue, operating_cost, financial_loss) < 0:
+    print("Error: Monetary values cannot be negative.")
+
+else:
+    # Calculate expected revenue
+    expected_revenue = revenue * success_probability / 100
+
+    # Calculate expected financial loss
+    expected_loss = financial_loss * detection_probability / 100
+
+    # Calculate expected profit
+    expected_profit = (
+        expected_revenue - operating_cost - expected_loss
+    )
+
+    # Display results
+    print("\n----- ECONOMIC ANALYSIS -----")
+
+    print("Expected Revenue: Rs.", expected_revenue)
+    print("Operating Cost: Rs.", operating_cost)
+    print("Expected Financial Loss: Rs.", expected_loss)
+    print("Expected Profit/Loss: Rs.", expected_profit)
+
+    if expected_profit > 0:
+        print("Result: Positive expected financial value")
+    elif expected_profit < 0:
+        print("Result: Negative expected financial value")
+    else:
+        print("Result: Break-even")
+
+    print("\nCybersecurity learning note:")
+    print("Prevention, detection and incident response")
+    print("help reduce the economic impact of cybercrime.")
